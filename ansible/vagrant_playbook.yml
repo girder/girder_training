@@ -1,0 +1,113 @@
+---
+- hosts: all
+  tasks:
+    - name: MongoDB | Fetch GPG key
+      command: apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
+      sudo: yes
+
+    - name: MongoDB | Add 10 gen repository
+      shell:
+        echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/10gen.list creates=/etc/apt/sources.list.d/10gen.list
+      sudo: yes
+
+    - name: add nodejs ppa
+      shell: curl -sL https://deb.nodesource.com/setup_4.x | bash -
+      sudo: yes
+
+    - name: install system packages
+      apt: update-cache=yes name={{ item }} state=present
+      sudo: yes
+      with_items:
+        - curl
+        - python-pycurl
+        - python-pip
+        - python2.7-dev
+        - build-essential
+        - mongodb-org-server
+        - nodejs
+        - python-software-properties
+        - libffi-dev
+        - cmake
+        - cmake-curses-gui
+        - git
+        - rabbitmq-server
+        - libssl-dev
+        - postfix
+        - libjpeg-dev
+        - libfreetype6-dev
+        - zlib1g-dev
+        - libpng-dev
+
+    - name: get the most recent version of pip
+      pip: name=pip extra_args="-U"
+      sudo: yes
+
+    - name: install girder package
+      pip: name=girder version=1.5.0
+      sudo: yes
+
+    - name: install the girder web client
+      command: girder-install web
+      sudo: yes
+
+    - name: install girder_worker package
+      pip: name=girder_worker[girder_io] version=0.2.0
+      sudo: yes
+
+    - name: install girder service script
+      template: src=girder.conf.j2 dest=/etc/init/girder.conf mode=644 owner=root
+      sudo: yes
+
+    - name: install worker service script
+      template: src=girder_worker.conf.j2 dest=/etc/init/girder_worker.conf mode=644 owner=root
+      sudo: yes
+
+    - name: start the girder server
+      service: name=girder state=restarted enabled=yes
+      sudo: yes
+
+    - name: wait for girder startup
+      wait_for:
+        port: 8080
+        delay: 1
+
+    - name: ensure girder admin user exists
+      girder:
+        port: 8080
+        user:
+          firstName: Admin
+          lastName: User
+          password: admin4girder
+          login: admin
+          email: admin@fakedomain.com
+          admin: yes
+        state: present
+
+    - name: enable worker plugin
+      girder:
+        port: 8080
+        username: admin
+        password: admin4girder
+        plugins:
+          - worker
+        state: present
+
+    - name: Ensure the existence of the filesystem assetstore
+      girder:
+        port: 8080
+        username: admin
+        password: admin4girder
+        assetstore:
+          name: default
+          type: filesystem
+          root: /home/vagrant/girder_assetstore
+          current: true
+        state: present
+
+    - name: restart girder service
+      service: name=girder state=restarted enabled=yes
+      sudo: yes
+
+    - name: restart worker service
+      service: name=girder_worker state=restarted enabled=yes
+      sudo: yes
