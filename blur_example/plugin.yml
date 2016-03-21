@@ -1,0 +1,5 @@
+name: Anisotropic blur example
+description: Uses SimpleITK and the remote worker to blur an image.
+version: 1.0
+dependencies:
+  -worker
