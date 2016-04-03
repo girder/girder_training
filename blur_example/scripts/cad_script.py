@@ -1,4 +1,5 @@
 import itk
+import os
 
 InputPixelType = itk.F
 OutputPixelType = itk.UC
@@ -8,8 +9,9 @@ numberOfIterations = 50
 timeStep = 0.1
 conductance = 0.4
 
-inputFileName = '../../BrainProtonDensitySlice.png'
-outputFileName = 'out.png'
+outputFileName = os.path.splitext(inputFileName)[0] + '_out.png'
+inputFileName = str(inputFileName)
+outputFileName = str(outputFileName)
 
 outputPixelTypeMin = itk.NumericTraits[OutputPixelType].min()
 outputPixelTypeMax = itk.NumericTraits[OutputPixelType].max()
@@ -39,4 +41,3 @@ writer = WriterType.New()
 writer.SetFileName(outputFileName)
 writer.SetInput(rescalar.GetOutput())
 writer.Update()
-

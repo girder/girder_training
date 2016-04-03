@@ -52,7 +52,7 @@
       sudo: yes
 
     - name: install girder package
-      pip: name=girder version=1.5.0
+      pip: name=girder version=1.5.1
       sudo: yes
 
     - name: install the girder web client
@@ -63,12 +63,24 @@
       pip: name=girder_worker[girder_io] version=0.2.0
       sudo: yes
 
+    - name: enable girder_io plugin in the worker
+      lineinfile:
+        dest: /usr/local/lib/python2.7/dist-packages/girder_worker/worker.local.cfg
+        state: present
+        regexp: "^plugins_enabled="
+        line: "plugins_enabled=girder_io"
+      sudo: yes
+
     - name: install girder service script
       template: src=girder.conf.j2 dest=/etc/init/girder.conf mode=644 owner=root
       sudo: yes
 
     - name: install worker service script
       template: src=girder_worker.conf.j2 dest=/etc/init/girder_worker.conf mode=644 owner=root
+      sudo: yes
+
+    - name: install the blur_example plugin
+      command: girder-install plugin -s /vagrant/blur_example
       sudo: yes
 
     - name: start the girder server
@@ -92,13 +104,12 @@
           admin: yes
         state: present
 
-    - name: enable worker plugin
+    - name: enable blur example plugin
       girder:
         port: 8080
         username: admin
         password: admin4girder
-        plugins:
-          - worker
+        plugins: ["blur_example", "thumbnails"]
         state: present
 
     - name: Ensure the existence of the filesystem assetstore
