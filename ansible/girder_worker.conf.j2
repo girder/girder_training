@@ -7,9 +7,9 @@ respawn
 respawn limit 10 10
 
 script
-    exec sudo C_FORCE_ROOT=true girder-worker --pidfile=.worker_pids > /home/vagrant/worker.log 2>&1
+    exec sudo -u vagrant python -m girder_worker --pidfile=/home/vagrant/.worker_pids > /home/vagrant/worker.log 2>&1
 end script
 
 pre-stop script
-    exec sudo celery multi stopwait worker --pidfile=.worker_pids > /dev/null 2>&1
+    exec sudo -u vagrant celery multi stopwait worker --pidfile=/home/vagrant/.worker_pids > /dev/null 2>&1
 end script
