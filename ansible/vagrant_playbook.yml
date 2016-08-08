@@ -59,24 +59,32 @@
       command: girder-install web
       sudo: yes
 
-    - name: install girder_worker package
-      pip: name=girder_worker[girder_io] version=0.2.0
+    - name: clone girder_worker
       sudo: yes
+      git:
+        repo: git://github.com/girder/girder_worker.git
+        dest: /home/vagrant/girder_worker
+        accept_hostkey: yes
+        force: yes
+        version: master
+
+    - name: install girder_worker
+      sudo: yes
+      pip:
+        name: /home/vagrant/girder_worker[docker,girder_io]
+        extra_args: "-e"
+        state: present
 
     - name: enable girder_io plugin in the worker
-      lineinfile:
-        dest: /usr/local/lib/python2.7/dist-packages/girder_worker/worker.local.cfg
-        state: present
-        regexp: "^plugins_enabled="
-        line: "plugins_enabled=girder_io"
-      sudo: yes
-
-    - name: install girder service script
-      template: src=girder.conf.j2 dest=/etc/init/girder.conf mode=644 owner=root
+      command: girder-worker-config set girder_worker plugins_enabled girder_io
       sudo: yes
 
     - name: install worker service script
       template: src=girder_worker.conf.j2 dest=/etc/init/girder_worker.conf mode=644 owner=root
+      sudo: yes
+
+    - name: install girder service script
+      template: src=girder.conf.j2 dest=/etc/init/girder.conf mode=644 owner=root
       sudo: yes
 
     - name: install the blur_example plugin
